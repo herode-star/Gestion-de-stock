@@ -1,6 +1,8 @@
 FROM php:8.3-apache
 
-RUN docker-php-ext-install pdo_mysql mysqli
+RUN apt-get update && apt-get install -y --no-install-recommends libcurl4-openssl-dev \
+    && docker-php-ext-install pdo_mysql mysqli curl \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY docker/apache-directory-index.conf /etc/apache2/conf-available/directory-index.conf
 RUN a2enconf directory-index

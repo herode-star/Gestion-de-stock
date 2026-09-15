@@ -16,6 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($valid) {
         session_regenerate_id(true);
         $_SESSION['admin_id'] = (int) $user['user_id'];
+        log_activity('login', 'session', null, 'Koneksyon reyisi');
         redirect('index.php');
     }
     $error = 'Imèl oswa modpas la pa kòrèk.';

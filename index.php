@@ -18,6 +18,7 @@ page_header('Tableau de bord', 'dashboard');
  <div class="card stat"><small>Stock ki ba</small><strong><?= $stats['low'] ?></strong><em>bezwen atansyon</em></div>
  <div class="card stat"><small>Lavant jodi a</small><strong><?= e(money($stats['today'])) ?></strong><em><?= e(date('d/m/Y')) ?></em></div>
 </div>
+<a class="intelligence-banner" href="analytics.php"><span class="ai-orb">✦</span><div><strong>AI ap siveye biznis ou</strong><small>Wè pwofi, tandans lavant, risk stock ak rekòmandasyon pou pwochen aksyon ou.</small></div><b>Ouvri estatistik →</b></a>
 <div class="grid-2">
  <div class="card"><div class="page-actions"><h2>Dènye lavant yo</h2><a class="button small" href="sales.php">Wè tout</a></div>
  <?php if (!$recent): ?><div class="empty">Poko gen lavant. Peze “Nouvo vant” pou kòmanse.</div><?php else: ?><div class="table-wrap"><table><thead><tr><th>Nimewo</th><th>Kliyan</th><th>Peman</th><th>Total</th><th>Dat</th></tr></thead><tbody><?php foreach ($recent as $sale): ?><tr><td>#<?= (int)$sale['sale_id'] ?></td><td><?= e($sale['customer_name']) ?></td><td><?= e($sale['payment_method']) ?></td><td><strong><?= e(money($sale['total'])) ?></strong></td><td><?= e(date('d/m/Y H:i', strtotime($sale['created_at']))) ?></td></tr><?php endforeach; ?></tbody></table></div><?php endif; ?>

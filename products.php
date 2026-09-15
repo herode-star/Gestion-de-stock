@@ -8,21 +8,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = post('action');
     if ($action === 'save') {
         $id = (int) post('id', '0');
-        $values = [post('category'), post('model'), post('brand'), post('reference'), (float) post('price'), max(0, (int) post('quantity')), post('description'), post('supplier_id') !== '' ? (int) post('supplier_id') : null];
+        $values = [post('category'), post('model'), post('brand'), post('reference'), (float) post('price'), max(0, (float) post('cost_price')), max(0, (int) post('quantity')), post('description'), post('supplier_id') !== '' ? (int) post('supplier_id') : null];
         if ($values[1] === '' || $values[3] === '' || $values[4] < 0) {
             flash('error', 'Non, referans ak pri pwodwi a obligatwa.');
         } elseif ($id) {
             $old = $pdo->prepare('SELECT quantite FROM produit WHERE id=?'); $old->execute([$id]); $before = (int) $old->fetchColumn();
-            $stmt = $pdo->prepare("UPDATE produit SET categorie=?,model=?,marque=?,referance=?,prix=?,quantite=?,description=?,four_id=? WHERE id=?");
+            $stmt = $pdo->prepare("UPDATE produit SET categorie=?,model=?,marque=?,referance=?,prix=?,cost_price=?,quantite=?,description=?,four_id=? WHERE id=?");
             $stmt->execute(array_merge($values, [$id]));
-            $delta = $values[5] - $before;
+            $delta = $values[6] - $before;
             if ($delta !== 0) $pdo->prepare("INSERT INTO stock_movements(product_id,movement_type,quantity,note,created_by) VALUES(?, 'adjustment', ?, 'Koreksyon manyèl', ?)")->execute([$id, $delta, current_user()['user_id']]);
+            log_activity('update','product',$id,trim($values[2].' '.$values[1]).'; stock '.$before.' → '.$values[6]);
             flash('success', 'Pwodwi a modifye.');
         } else {
-            $stmt = $pdo->prepare("INSERT INTO produit(categorie,model,marque,referance,prix,img,img_face,img_darrier,etat,color,quantite,date_entre,description,four_id) VALUES(?,?,?,?,?,'','','','Neuf','',?,NOW(),?,?)");
+            $stmt = $pdo->prepare("INSERT INTO produit(categorie,model,marque,referance,prix,cost_price,img,img_face,img_darrier,etat,color,quantite,date_entre,description,four_id) VALUES(?,?,?,?,?,?,'','','','Neuf','',?,NOW(),?,?)");
             $stmt->execute($values);
             $id = (int) $pdo->lastInsertId();
-            if ($values[5] > 0) $pdo->prepare("INSERT INTO stock_movements(product_id,movement_type,quantity,note,created_by) VALUES(?, 'in', ?, 'Premye stock', ?)")->execute([$id, $values[5], current_user()['user_id']]);
+            if ($values[6] > 0) $pdo->prepare("INSERT INTO stock_movements(product_id,movement_type,quantity,note,created_by) VALUES(?, 'in', ?, 'Premye stock', ?)")->execute([$id, $values[6], current_user()['user_id']]);
+            log_activity('create','product',$id,trim($values[2].' '.$values[1]).'; stock '.$values[6]);
             flash('success', 'Nouvo pwodwi a ajoute.');
         }
         redirect('products.php');
@@ -31,6 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $id = (int) post('id');
         try {
             $pdo->prepare('DELETE FROM produit WHERE id=?')->execute([$id]);
+            log_activity('delete','product',$id,'Pwodwi efase');
             flash('success', 'Pwodwi a efase.');
         } catch (PDOException $e) {
             flash('error', 'Pwodwi sa a gen lavant ki relye avè l; mete kantite li a 0 olye ou efase l.');
@@ -58,6 +61,7 @@ page_header($showForm ? ($edit ? 'Modifye pwodwi' : 'Ajoute pwodwi') : 'Pwodwi a
 <div class="field"><label>Referans / SKU *</label><input name="reference" required value="<?= e($edit['referance']??'') ?>" placeholder="Egzanp: IP15-128-BLK"></div>
 <div class="field"><label>Kategori</label><input name="category" value="<?= e($edit['categorie']??'') ?>" placeholder="Telefòn, rad, manje..."></div>
 <div class="field"><label>Pri vant *</label><input type="number" min="0" step="0.01" name="price" required value="<?= e($edit['prix']??'') ?>"></div>
+<div class="field"><label>Pri acha</label><input type="number" min="0" step="0.01" name="cost_price" value="<?= e($edit['cost_price']??'0') ?>"><small>Sa pèmèt sistèm nan kalkile pwofi.</small></div>
 <div class="field"><label>Kantite nan stock</label><input type="number" min="0" name="quantity" required value="<?= e($edit['quantite']??'0') ?>"></div>
 <div class="field"><label>Founisè</label><select name="supplier_id"><option value="">— Pa chwazi —</option><?php foreach($suppliers as $s): ?><option value="<?= (int)$s['fourn_id'] ?>" <?= (string)($edit['four_id']??'')===(string)$s['fourn_id']?'selected':'' ?>><?= e($s['nom'].' '.$s['prenom']) ?></option><?php endforeach; ?></select></div>
 <div class="field full"><label>Nòt / deskripsyon</label><textarea name="description"><?= e($edit['description']??'') ?></textarea></div>

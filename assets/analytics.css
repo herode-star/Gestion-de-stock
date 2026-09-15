@@ -1,0 +1,4 @@
+.intelligence-banner{display:flex;align-items:center;gap:14px;margin:-4px 0 24px;padding:17px 20px;border-radius:17px;text-decoration:none;color:#fff;background:linear-gradient(110deg,#0b3b29,#167447 70%,#15995a);box-shadow:0 13px 30px rgba(9,64,38,.17);transition:transform .2s,box-shadow .2s}
+.intelligence-banner:hover{transform:translateY(-3px);box-shadow:0 18px 38px rgba(9,64,38,.24)}
+.intelligence-banner div{display:grid;gap:3px}.intelligence-banner small{color:#cce8d8}.intelligence-banner b{margin-left:auto;white-space:nowrap}
+@media(max-width:650px){.intelligence-banner b{display:none}}

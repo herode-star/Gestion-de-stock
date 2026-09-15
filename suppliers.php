@@ -3,9 +3,9 @@ require_once __DIR__.'/core/layout.php'; require_auth(); $pdo=db();
 if($_SERVER['REQUEST_METHOD']==='POST'){verify_csrf();$action=post('action');
  if($action==='save'){ $id=(int)post('id','0');$v=[post('name'),post('contact'),post('address'),post('city'),post('phone')];
   if($v[0]===''){flash('error','Non founisè a obligatwa.');}
-  elseif($id){$pdo->prepare('UPDATE fournisseur SET nom=?,prenom=?,adresse=?,ville=?,num_tel=? WHERE fourn_id=?')->execute(array_merge($v,[$id]));flash('success','Founisè a modifye.');}
-  else{$pdo->prepare('INSERT INTO fournisseur(nom,prenom,adresse,ville,num_tel) VALUES(?,?,?,?,?)')->execute($v);flash('success','Founisè a ajoute.');}redirect('suppliers.php');}
- if($action==='delete'){$id=(int)post('id');$check=$pdo->prepare('SELECT COUNT(*) FROM produit WHERE four_id=?');$check->execute([$id]);if((int)$check->fetchColumn()>0){flash('error','Ou pa ka efase founisè sa a paske gen pwodwi ki relye avè l.');}else{$pdo->prepare('DELETE FROM fournisseur WHERE fourn_id=?')->execute([$id]);flash('success','Founisè a efase.');}redirect('suppliers.php');}}
+  elseif($id){$pdo->prepare('UPDATE fournisseur SET nom=?,prenom=?,adresse=?,ville=?,num_tel=? WHERE fourn_id=?')->execute(array_merge($v,[$id]));log_activity('update','supplier',$id,$v[0]);flash('success','Founisè a modifye.');}
+  else{$pdo->prepare('INSERT INTO fournisseur(nom,prenom,adresse,ville,num_tel) VALUES(?,?,?,?,?)')->execute($v);$id=(int)$pdo->lastInsertId();log_activity('create','supplier',$id,$v[0]);flash('success','Founisè a ajoute.');}redirect('suppliers.php');}
+ if($action==='delete'){$id=(int)post('id');$check=$pdo->prepare('SELECT COUNT(*) FROM produit WHERE four_id=?');$check->execute([$id]);if((int)$check->fetchColumn()>0){flash('error','Ou pa ka efase founisè sa a paske gen pwodwi ki relye avè l.');}else{$pdo->prepare('DELETE FROM fournisseur WHERE fourn_id=?')->execute([$id]);log_activity('delete','supplier',$id,'Founisè efase');flash('success','Founisè a efase.');}redirect('suppliers.php');}}
 $edit=null;if(isset($_GET['edit'])){$s=$pdo->prepare('SELECT * FROM fournisseur WHERE fourn_id=?');$s->execute([(int)$_GET['edit']]);$edit=$s->fetch();}$show=isset($_GET['new'])||$edit;
 $list=$pdo->query('SELECT f.*,COUNT(p.id) product_count FROM fournisseur f LEFT JOIN produit p ON p.four_id=f.fourn_id GROUP BY f.fourn_id ORDER BY f.nom')->fetchAll();page_header($show?($edit?'Modifye founisè':'Ajoute founisè'):'Founisè','suppliers');
 ?>

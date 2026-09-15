@@ -39,6 +39,20 @@ Aplikasyon an retire kantite ki vann lan nan stock otomatikman.
 
 Ou ka chanje nivo avètisman an nan **Paramèt**.
 
+## Sèvi ak AI ak estatistik
+
+1. Peze **AI & Estatistik** nan meni an.
+2. Chwazi peryòd ou vle analize a: 7, 30, 90 oswa 365 jou.
+3. Gade chif lavant, pwofi estime, lajan ki nan stock ak pwodwi ki pi vann.
+4. Li seksyon **Rekòmandasyon otomatik** pou konnen ki stock pou achte ankò ak ki pwoblèm pou verifye.
+5. Si AI avanse aktive, ekri yon kestyon tankou: “Ki pwodwi mwen dwe achte ankò semèn sa a?”
+
+Pou pwofi a kòrèk, toujou mete **pri acha** ak **pri vant** lè w ap ajoute yon pwodwi.
+
+## Verifye tout sa moun fè
+
+Ale nan **Aktivite** pou wè dat, lè, itilizatè ak detay chak lavant, pwodwi modifye, founisè, paramèt, sovgad ak kestyon AI. Sa ede ou kenbe kontwòl menm si plizyè moun itilize aplikasyon an.
+
 ## Ajoute yon founisè
 
 Ale nan **Founisè**, peze **Ajoute founisè**, epi mete non ak nimewo telefòn moun oswa konpayi ki vann ou machandiz la. Lè w ap kreye oswa modifye yon pwodwi, ou ka chwazi founisè li.

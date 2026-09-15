@@ -10,6 +10,8 @@ function page_header(string $title, string $active = ''): void
         'dashboard' => ['index.php', 'Akèy', '⌂'],
         'products' => ['products.php', 'Pwodwi', '□'],
         'sales' => ['sales.php', 'Lavant', '$'],
+        'analytics' => ['analytics.php', 'AI & Estatistik', '✦'],
+        'activity' => ['activity.php', 'Aktivite', '◎'],
         'suppliers' => ['suppliers.php', 'Founisè', '♧'],
         'users' => ['users.php', 'Itilizatè', '♙'],
         'settings' => ['settings.php', 'Paramèt', '⚙'],
@@ -23,6 +25,7 @@ function page_header(string $title, string $active = ''): void
     <meta name="theme-color" content="#166534">
     <title><?= e($title) ?> · <?= e($business) ?></title>
     <link rel="stylesheet" href="assets/app.css">
+    <link rel="stylesheet" href="assets/analytics.css">
 </head>
 <body>
 <div class="app-shell">
