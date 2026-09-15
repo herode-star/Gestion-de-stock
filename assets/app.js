@@ -13,3 +13,32 @@ document.querySelectorAll('[data-product-select]').forEach(function (select) {
     if (stock) stock.textContent = option.dataset.stock ? 'Gen ' + option.dataset.stock + ' nan stock.' : '';
   });
 });
+
+var animatedElements = document.querySelectorAll('.content > *, .stats .card, .grid-2 > .card, tbody tr');
+animatedElements.forEach(function (element, index) {
+  element.classList.add('reveal');
+  element.style.setProperty('--delay', Math.min(index * 45, 360) + 'ms');
+});
+requestAnimationFrame(function () {
+  animatedElements.forEach(function (element) { element.classList.add('visible'); });
+});
+
+var progress = document.createElement('div');
+progress.className = 'page-progress';
+document.body.appendChild(progress);
+document.querySelectorAll('a[href]:not([href^="#"]):not([target])').forEach(function (link) {
+  link.addEventListener('click', function () {
+    progress.style.width = '72%';
+    progress.style.opacity = '1';
+  });
+});
+window.addEventListener('load', function () {
+  progress.style.width = '100%';
+  setTimeout(function () { progress.style.opacity = '0'; }, 220);
+});
+
+document.addEventListener('click', function (event) {
+  if (document.body.classList.contains('menu-open') && !event.target.closest('.sidebar') && !event.target.closest('.menu-button')) {
+    document.body.classList.remove('menu-open');
+  }
+});
