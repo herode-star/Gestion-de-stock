@@ -1,0 +1,32 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8080:80"
+    environment:
+      DB_HOST: database
+      DB_NAME: Otechnologie
+      DB_USER: stock_user
+      DB_PASSWORD: stock_password
+    depends_on:
+      database:
+        condition: service_healthy
+
+  database:
+    image: mariadb:10.5
+    environment:
+      MARIADB_DATABASE: Otechnologie
+      MARIADB_USER: stock_user
+      MARIADB_PASSWORD: stock_password
+      MARIADB_ROOT_PASSWORD: root_password
+    volumes:
+      - stock_data:/var/lib/mysql
+      - ./bd/otechnologie.sql:/docker-entrypoint-initdb.d/01-otechnologie.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot_password"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  stock_data:

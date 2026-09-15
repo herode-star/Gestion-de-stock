@@ -1,17 +1,29 @@
 <?php
-//session_start();
-$DB_host = "localhost";
-$DB_user = "root";
-$DB_pass = "";
-$DB_name = "Otechnologie";
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+$DB_host = getenv('DB_HOST') ?: 'localhost';
+$DB_user = getenv('DB_USER') ?: 'root';
+$DB_pass = getenv('DB_PASSWORD') ?: '';
+$DB_name = getenv('DB_NAME') ?: 'Otechnologie';
 
 
 try {
 
-$DB_con = new
-PDO("mysql:host={$DB_host};dbname={$DB_name}",$DB_user,$DB_pass);
+$DB_con = new PDO(
+    "mysql:host={$DB_host};dbname={$DB_name};charset=utf8mb4",
+    $DB_user,
+    $DB_pass,
+    array(
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_EMULATE_PREPARES => false,
+    )
+);
 } catch(PDOException $e) {
-echo $e->getMessage();
+    http_response_code(500);
+    exit('Connexion a la base de donnees impossible.');
 }
 if (isset($_SESSION['user_session'])) {
 
@@ -21,10 +33,17 @@ if (isset($_SESSION['user_session'])) {
  	$umail="";
  }
 
-$reponsee = $DB_con->query("SELECT * FROM users where user_email='$umail' LIMIT 1");
-$donnes=$reponsee->fetch(PDO::FETCH_ASSOC);
-$user=$donnes['user_id'];
-$userpers=$donnes['personnalite'];
+$user = null;
+$userpers = null;
+if ($umail !== '') {
+    $reponsee = $DB_con->prepare('SELECT user_id, personnalite FROM users WHERE user_email = :email LIMIT 1');
+    $reponsee->execute(array(':email' => $umail));
+    $donnes = $reponsee->fetch();
+    if ($donnes) {
+        $user = $donnes['user_id'];
+        $userpers = $donnes['personnalite'];
+    }
+}
 
 
 
@@ -42,7 +61,7 @@ $reponse = $DB_con->query("SELECT pro_id,count(numcom) as star FROM commande gro
 
 /******* devise *************/
 $res=$DB_con->query("SELECT * FROM formweb");
-$rows = $res->fetch();
+$rows = $res->fetch() ?: array();
 
                  $devise="TND";
 				  if(isset($_GET['d'])){
