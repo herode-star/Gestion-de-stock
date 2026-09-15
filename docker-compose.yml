@@ -8,12 +8,13 @@ services:
       DB_NAME: Otechnologie
       DB_USER: stock_user
       DB_PASSWORD: stock_password
+      APP_TIMEZONE: America/Toronto
     depends_on:
       database:
         condition: service_healthy
 
   database:
-    image: mariadb:10.5
+    image: mariadb:10.11
     environment:
       MARIADB_DATABASE: Otechnologie
       MARIADB_USER: stock_user

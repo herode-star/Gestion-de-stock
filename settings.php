@@ -1,0 +1,8 @@
+<?php
+require_once __DIR__.'/core/layout.php';require_auth();
+if($_SERVER['REQUEST_METHOD']==='POST'){verify_csrf();save_setting('business_name',post('business_name'));save_setting('currency',post('currency'));save_setting('low_stock_limit',(string)max(0,(int)post('low_stock_limit','5')));flash('success','Paramèt yo sove.');redirect('settings.php');}
+page_header('Paramèt','settings');
+?>
+<div class="grid-2"><div class="card"><h2>Enfòmasyon biznis</h2><form method="post" class="form-grid"><input type="hidden" name="csrf" value="<?=e(csrf_token())?>"><div class="field full"><label>Non biznis la</label><input name="business_name" required value="<?=e(setting('business_name'))?>"></div><div class="field"><label>Lajan</label><select name="currency"><?php foreach(['CAD'=>'Dola Kanadyen','HTG'=>'Goud','USD'=>'Dola Ameriken','EUR'=>'Ewo'] as $code=>$name):?><option value="<?=$code?>" <?=setting('currency')===$code?'selected':''?>><?=$code?> — <?=$name?></option><?php endforeach;?></select></div><div class="field"><label>Avèti m lè stock rive nan</label><input type="number" min="0" name="low_stock_limit" value="<?=e(setting('low_stock_limit','5'))?>"></div><div class="form-footer"><button class="primary">Sove paramèt yo</button></div></form></div>
+<div class="card"><h2>Sekirite ak sovgad</h2><p class="muted">Telechaje yon kopi tout done enpòtan yo. Kenbe fichye a yon kote ki an sekirite.</p><a class="button" href="backup.php">↓ Telechaje sovgad</a><div class="help-box" style="margin-top:20px"><strong>Bon abitid:</strong> fè yon sovgad chak semèn ak anvan nenpòt gwo chanjman.</div></div></div>
+<?php page_footer();?>
