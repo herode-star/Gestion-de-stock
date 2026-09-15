@@ -26,6 +26,7 @@ function page_header(string $title, string $active = ''): void
     <title><?= e($title) ?> · <?= e($business) ?></title>
     <link rel="stylesheet" href="assets/app.css">
     <link rel="stylesheet" href="assets/analytics.css">
+    <link rel="stylesheet" href="assets/uploads.css">
 </head>
 <body>
 <div class="app-shell">

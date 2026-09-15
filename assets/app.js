@@ -42,3 +42,16 @@ document.addEventListener('click', function (event) {
     document.body.classList.remove('menu-open');
   }
 });
+
+var imageInput = document.getElementById('product-image');
+if (imageInput) {
+  imageInput.addEventListener('change', function () {
+    var file = imageInput.files && imageInput.files[0];
+    if (!file) return;
+    var preview = document.getElementById('image-preview');
+    var placeholder = document.getElementById('image-placeholder');
+    preview.src = URL.createObjectURL(file);
+    preview.hidden = false;
+    if (placeholder) placeholder.hidden = true;
+  });
+}

@@ -17,7 +17,8 @@ Se tout. Aplikasyon an ap mennen ou sou tableau de bord la.
 1. Peze **Pwodwi** nan meni an.
 2. Peze **Ajoute pwodwi**.
 3. Mete non pwodwi a, referans li, pri a ak kantite ou genyen.
-4. Peze **Sove pwodwi a**.
+4. Nan **Foto pwodwi a**, peze bouton pou chwazi yon foto sou òdinatè oswa telefòn ou. Ou ap wè aperçu a anvan ou sove.
+5. Peze **Sove pwodwi a**.
 
 Referans lan se yon ti kòd ki ede ou rekonèt pwodwi a. Egzanp: `DLO-500ML`.
 
