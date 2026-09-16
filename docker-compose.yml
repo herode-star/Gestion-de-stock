@@ -2,15 +2,17 @@ services:
   app:
     build: .
     ports:
-      - "8080:80"
+      - "127.0.0.1:8080:80"
     environment:
       DB_HOST: database
       DB_NAME: Otechnologie
       DB_USER: stock_user
-      DB_PASSWORD: stock_password
+      DB_PASSWORD: ${DB_PASSWORD:?Ranpli DB_PASSWORD nan .env}
       APP_TIMEZONE: America/Toronto
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5-mini}
+    volumes:
+      - stock_images:/var/www/html/produit
     depends_on:
       database:
         condition: service_healthy
@@ -20,16 +22,17 @@ services:
     environment:
       MARIADB_DATABASE: Otechnologie
       MARIADB_USER: stock_user
-      MARIADB_PASSWORD: stock_password
-      MARIADB_ROOT_PASSWORD: root_password
+      MARIADB_PASSWORD: ${DB_PASSWORD:?Ranpli DB_PASSWORD nan .env}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Ranpli DB_ROOT_PASSWORD nan .env}
     volumes:
       - stock_data:/var/lib/mysql
       - ./bd/otechnologie.sql:/docker-entrypoint-initdb.d/01-otechnologie.sql:ro
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot_password"]
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 5s
       timeout: 5s
       retries: 20
 
 volumes:
   stock_data:
+  stock_images:

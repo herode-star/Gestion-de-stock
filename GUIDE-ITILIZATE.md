@@ -2,6 +2,14 @@
 
 Gid sa a fèt pou yon moun ki pa konn enfòmatik.
 
+## Prepare premye demaraj la
+
+Nan dosye pwojè a, fè yon kopi `.env.example` epi rele li `.env`. Ouvri `.env` ak yon editè tèks, mete yon modpas apre `DB_PASSWORD=` epi yon lòt apre `DB_ROOT_PASSWORD=`. Sove fichye a. Pa pataje li.
+
+Si ou deja gen done nan aplikasyon an, se modpas bazdone ki te sèvi nan ansyen enstalasyon an ou dwe mete. Yon nouvo modpas nan fichye a pa chanje modpas bazdone ki deja egziste a.
+
+Kouri `docker compose up -d --build`, epi ouvri http://localhost:8080.
+
 ## Premye fwa ou ouvri aplikasyon an
 
 1. Ekri non biznis ou.
@@ -81,3 +89,29 @@ Fè sa omwen yon fwa pa semèn.
 - Si ou pa ka konekte, verifye imèl la ak modpas la.
 - Si stock la pa kòrèk, ale nan **Pwodwi**, peze **Modifye**, epi korije kantite a.
 - Pa efase yon pwodwi ki deja gen lavant; mete kantite li a `0` pito.
+
+## Mete aplikasyon an ajou san pèdi done
+
+Nan Ubuntu, antre nan dosye `Gestion-de-stock` la, epi kouri:
+
+```bash
+git pull --ff-only
+docker compose up -d --build
+```
+
+Apre sa, ouvri http://localhost:8080. Pa sèvi ak `docker compose down --volumes` sou enstalasyon ou itilize chak jou: sa efase done ak foto yo.
+
+Si ou te deja ajoute foto ak ansyen vèsyon an, kopye yo anvan premye mizajou a:
+
+```bash
+docker compose cp app:/var/www/html/produit ./foto-anvan-mizajou
+```
+
+Apre mizajou a, remete yo:
+
+```bash
+docker compose cp ./foto-anvan-mizajou/. app:/var/www/html/produit/
+docker compose exec -u root app chown -R www-data:www-data /var/www/html/produit
+```
+
+Sovgad JSON nan Paramèt la gen done komès la, men li pa gen kont itilizatè, modpas oswa fichye foto yo. Li pa yon sovgad konplè pou retabli enstalasyon an. Gade README pou sovgad konplè.

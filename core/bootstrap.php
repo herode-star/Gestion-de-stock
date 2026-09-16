@@ -2,6 +2,8 @@
 declare(strict_types=1);
 
 if (session_status() === PHP_SESSION_NONE) {
+    ini_set('session.use_strict_mode', '1');
+    session_set_cookie_params(['httponly' => true, 'samesite' => 'Lax', 'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off']);
     session_start();
 }
 
@@ -98,12 +100,13 @@ function migrate(PDO $pdo): void
             'ALTER TABLE users MODIFY user_email VARCHAR(120) NOT NULL',
             'ALTER TABLE users MODIFY num_tel VARCHAR(30) NOT NULL',
             'ALTER TABLE fournisseur MODIFY num_tel VARCHAR(30) NULL',
-            'ALTER TABLE produit MODIFY model VARCHAR(120) NOT NULL, MODIFY marque VARCHAR(120) NOT NULL, MODIFY categorie VARCHAR(80) NOT NULL, MODIFY referance VARCHAR(80) NOT NULL',
+            'ALTER TABLE produit MODIFY model VARCHAR(120) NOT NULL, MODIFY marque VARCHAR(120) NOT NULL, MODIFY categorie VARCHAR(80) NOT NULL',
         ];
         foreach ($alterations as $sql) {
             try {
                 $pdo->exec($sql);
-            } catch (PDOException $ignored) {
+            } catch (PDOException $error) {
+                throw $error;
             }
         }
         $stmt = $pdo->prepare("INSERT INTO app_settings(setting_key, setting_value) VALUES('schema_version', '1') ON DUPLICATE KEY UPDATE setting_value='1'");
@@ -114,9 +117,20 @@ function migrate(PDO $pdo): void
             'ALTER TABLE produit ADD COLUMN cost_price DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER prix',
             'ALTER TABLE sale_items ADD COLUMN cost_price DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER unit_price',
         ] as $sql) {
-            try { $pdo->exec($sql); } catch (PDOException $ignored) {}
+            try { $pdo->exec($sql); } catch (PDOException $error) {
+                if ((int)($error->errorInfo[1] ?? 0) !== 1060) throw $error;
+            }
         }
         $pdo->exec("INSERT INTO app_settings(setting_key,setting_value) VALUES('schema_version','2') ON DUPLICATE KEY UPDATE setting_value='2'");
+    }
+    if ((int) $version < 3) {
+        $pdo->exec("ALTER TABLE produit MODIFY prix DECIMAL(12,2) NOT NULL, MODIFY model VARCHAR(120) NOT NULL, MODIFY marque VARCHAR(120) NOT NULL, MODIFY categorie VARCHAR(80) NOT NULL");
+        // Replace the historical cascading delete in one atomic ALTER.
+        $constraintExists = $pdo->query("SELECT COUNT(*) FROM information_schema.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_SCHEMA=DATABASE() AND TABLE_NAME='produit' AND CONSTRAINT_NAME='product_supplier_restrict'")->fetchColumn();
+        if (!$constraintExists) {
+            $pdo->exec("ALTER TABLE produit DROP FOREIGN KEY produit_ibfk_1, ADD CONSTRAINT product_supplier_restrict FOREIGN KEY (four_id) REFERENCES fournisseur(fourn_id) ON DELETE RESTRICT ON UPDATE CASCADE");
+        }
+        $pdo->exec("INSERT INTO app_settings(setting_key,setting_value) VALUES('schema_version','3') ON DUPLICATE KEY UPDATE setting_value='3'");
     }
     $done = true;
 }
@@ -150,7 +164,7 @@ function current_user(): ?array
     if (empty($_SESSION['admin_id'])) {
         return null;
     }
-    $stmt = db()->prepare('SELECT user_id, user_name, user_prenom, user_email, personnalite FROM users WHERE user_id = ?');
+    $stmt = db()->prepare('SELECT user_id, user_name, user_prenom, user_email, personnalite FROM users WHERE user_id = ? AND personnalite = "admin"');
     $stmt->execute([(int) $_SESSION['admin_id']]);
     return $stmt->fetch() ?: null;
 }
@@ -182,7 +196,7 @@ function csrf_token(): string
 function verify_csrf(): void
 {
     if (!isset($_POST['csrf']) || !hash_equals(csrf_token(), (string) $_POST['csrf'])) {
-        http_response_code(419);
+        http_response_code(403);
         exit('Sesyon an ekspire. Retounen sou paj anvan an epi eseye ankò.');
     }
 }
