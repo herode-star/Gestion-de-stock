@@ -1,5 +1,5 @@
 """Integration checks against a disposable Docker database; never production."""
-import http.cookiejar, json, re, urllib.request, urllib.parse, urllib.error
+import base64, http.cookiejar, json, re, subprocess, urllib.request, urllib.parse, urllib.error
 BASE = 'http://127.0.0.1:8080/'
 jar = http.cookiejar.CookieJar()
 client = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
@@ -13,6 +13,18 @@ def request(path, data=None, expected=200):
     assert response.status == expected, (path, response.status, body[:200])
     assert 'Fatal error' not in body and 'Warning:' not in body, (path, body[:200])
     return body
+
+def upload(data, image_bytes):
+    boundary = 'StockIntegrationBoundary2026'
+    parts = []
+    for key, value in data.items():
+        parts.append((f'--{boundary}\r\nContent-Disposition: form-data; name="{key}"\r\n\r\n{value}\r\n').encode())
+    parts.append((f'--{boundary}\r\nContent-Disposition: form-data; name="image"; filename="test.png"\r\nContent-Type: image/png\r\n\r\n').encode() + image_bytes + b'\r\n')
+    parts.append(f'--{boundary}--\r\n'.encode())
+    req = urllib.request.Request(BASE + 'products.php', b''.join(parts), {'Content-Type': 'multipart/form-data; boundary=' + boundary})
+    with client.open(req) as response:
+        body = response.read().decode()
+        assert response.status == 200 and 'Fatal error' not in body, body[:200]
 
 def token(path):
     return re.search(r'name="csrf" value="([^"]+)"', request(path)).group(1)
@@ -55,4 +67,19 @@ assert 'Konekte' in request('products.php')
 csrf=token('login.php')
 request('login.php',dict(csrf=csrf,email='owner@example.test',password='Test-only-12345'))
 assert 'Test Stock' in request('index.php')
-print('PASS: setup, login, pages, products, sales, stock conflicts, backup, CSRF, protected files')
+# Verify image replacement rollback and persistence across container recreation.
+png = base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aXioAAAAASUVORK5CYII=')
+csrf = token('products.php?edit=' + str(pid))
+upload(dict(product, csrf=csrf, id=pid, original_quantity='12', quantity='12'), png)
+image_name = next(row for row in backup()['produit'] if row['id']==pid)['img']
+assert image_name.startswith('upload-')
+with client.open(BASE + 'produit/' + image_name) as response:
+    assert response.read() == png
+upload(dict(product, csrf=csrf, id=pid, original_quantity='12', quantity='12', supplier_id='2147483647'), png)
+assert next(row for row in backup()['produit'] if row['id']==pid)['img'] == image_name
+with client.open(BASE + 'produit/' + image_name) as response:
+    assert response.read() == png
+subprocess.run(['docker','compose','up','-d','--force-recreate','--no-deps','--wait','app'],check=True)
+with client.open(BASE + 'produit/' + image_name) as response:
+    assert response.read() == png
+print('PASS: setup, login, pages, products, sales, stock conflicts, backup, CSRF, protected files, image rollback and persistence')
