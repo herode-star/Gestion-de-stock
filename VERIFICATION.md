@@ -23,9 +23,9 @@ Base: d7a015c0da9715250af72b1ada8fd44f82c871dc (master).
 - Compiled Python integration test syntax: passed.
 - git diff --check: passed.
 
-## Required before release
+## Integration verification
 
-The full Docker/PHP/MariaDB integration suite has NOT run. This environment has neither PHP nor Docker, and the package installation attempt failed because the container cannot switch system users. The prepared GitHub Actions workflow exercises setup, login, primary pages, products, sales, invalid inputs, stale stock forms, JSON backup, CSRF and protected files against a disposable database.
+The full Docker/PHP/MariaDB integration suite runs in GitHub Actions on pull request #1. It exercises setup, login, primary pages, products, sales, invalid inputs, stale stock forms, JSON backup, CSRF and protected files against a disposable database. The real PHP lint step checks all 57 application files. Earlier runs exposed and led to fixes for the historical reference foreign key, MariaDB constraint replacement naming, and the nonstandard CSRF HTTP status. Consult the latest Stock checks run for the final result.
 
 Publication to herode-star/Gestion-de-stock was explicitly authorized on 2026-09-16. The changes are available in pull request #1. The Stock checks workflow is the authoritative full integration result; verify its latest run before release. The suite also checks that failed photo replacement preserves the old image and that uploaded photos survive container recreation.
 
