@@ -126,7 +126,10 @@ function migrate(PDO $pdo): void
     if ((int) $version < 3) {
         $pdo->exec("ALTER TABLE produit MODIFY prix DECIMAL(12,2) NOT NULL, MODIFY model VARCHAR(120) NOT NULL, MODIFY marque VARCHAR(120) NOT NULL, MODIFY categorie VARCHAR(80) NOT NULL");
         // Replace the historical cascading delete in one atomic ALTER.
-        $pdo->exec("ALTER TABLE produit DROP FOREIGN KEY produit_ibfk_1, ADD CONSTRAINT produit_ibfk_1 FOREIGN KEY (four_id) REFERENCES fournisseur(fourn_id) ON DELETE RESTRICT ON UPDATE CASCADE");
+        $constraintExists = $pdo->query("SELECT COUNT(*) FROM information_schema.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_SCHEMA=DATABASE() AND TABLE_NAME='produit' AND CONSTRAINT_NAME='product_supplier_restrict'")->fetchColumn();
+        if (!$constraintExists) {
+            $pdo->exec("ALTER TABLE produit DROP FOREIGN KEY produit_ibfk_1, ADD CONSTRAINT product_supplier_restrict FOREIGN KEY (four_id) REFERENCES fournisseur(fourn_id) ON DELETE RESTRICT ON UPDATE CASCADE");
+        }
         $pdo->exec("INSERT INTO app_settings(setting_key,setting_value) VALUES('schema_version','3') ON DUPLICATE KEY UPDATE setting_value='3'");
     }
     $done = true;
