@@ -196,7 +196,7 @@ function csrf_token(): string
 function verify_csrf(): void
 {
     if (!isset($_POST['csrf']) || !hash_equals(csrf_token(), (string) $_POST['csrf'])) {
-        http_response_code(419);
+        http_response_code(403);
         exit('Sesyon an ekspire. Retounen sou paj anvan an epi eseye ankò.');
     }
 }

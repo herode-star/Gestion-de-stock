@@ -59,7 +59,7 @@ request('products.php',dict(product, id=pid, original_quantity='7', quantity='12
 assert int(next(row for row in backup()['produit'] if row['id']==pid)['quantite']) == 12
 request('products.php',dict(csrf=csrf, action='delete', id=pid))
 assert any(row['id']==pid for row in backup()['produit'])
-request('sales.php',dict(product_id=pid,quantity=1,unit_price=1),expected=419)
+request('sales.php',dict(product_id=pid,quantity=1,unit_price=1),expected=403)
 for path in ['bd/otechnologie.sql','core/bootstrap.php','classe/user.php','.env','.git/config','docker-compose.yml']:
     request(path,expected=403)
 request('logout.php')
