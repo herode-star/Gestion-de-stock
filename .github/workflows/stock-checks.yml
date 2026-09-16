@@ -1,0 +1,28 @@
+name: Stock checks
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate disposable database credentials
+        run: |
+          echo "DB_PASSWORD=$(openssl rand -hex 24)" > .env
+          echo "DB_ROOT_PASSWORD=$(openssl rand -hex 24)" >> .env
+      - name: Build and start the application
+        run: docker compose up -d --build --wait
+      - name: PHP syntax
+        run: docker compose exec -T app sh -c 'find /var/www/html -name "*.php" -not -path "*/vendor/*" -not -path "*/classe/*" -print0 | xargs -0 -n1 php -l'
+      - name: Application integration checks
+        run: python3 tests/smoke.py
+      - name: Diagnostics
+        if: failure()
+        run: docker compose logs --tail=100
+      - name: Stop disposable services
+        if: always()
+        run: docker compose down --volumes

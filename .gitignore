@@ -1,1 +1,6 @@
 .env
+sauvegardes/
+foto-anvan-mizajou/
+produit/upload-*
+
+__pycache__/

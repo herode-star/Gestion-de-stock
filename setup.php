@@ -15,6 +15,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($business === '' || $name === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($password) < 8) {
         $error = 'Ranpli tout chan yo. Modpas la dwe gen omwen 8 karaktè.';
     } else {
+        $pdo = db();
+        $pdo->query("SELECT GET_LOCK('stock_first_setup', 10)")->fetchColumn() == 1 or exit('Eseye ankò nan kèk segond.');
+        try {
+        if (setup_complete()) redirect('login.php');
+        $pdo->beginTransaction();
         $parts = preg_split('/\s+/', $name, 2);
         // The historical demo database contains a known plaintext administrator.
         // Disable every legacy administrator before creating the real owner account.
@@ -26,9 +31,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         save_setting('currency', post('currency', 'CAD'));
         save_setting('low_stock_limit', '5');
         save_setting('setup_complete', '1');
+        $pdo->commit();
+        session_regenerate_id(true);
         $_SESSION['admin_id'] = $id;
         flash('success', 'Byenvini! Aplikasyon an pare pou sèvi.');
         redirect('index.php');
+        } catch (Throwable $error) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            $error = 'Konfigirasyon an pa sove. Verifye enfòmasyon yo epi eseye ankò.';
+        } finally {
+            $pdo->query("SELECT RELEASE_LOCK('stock_first_setup')");
+        }
     }
 }
 ?>

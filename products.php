@@ -15,7 +15,6 @@ function save_product_image(string $existing = ''): string
     if (!is_dir($directory) && !mkdir($directory, 0775, true)) throw new RuntimeException('Dosye foto a pa disponib.');
     $filename = 'upload-'.bin2hex(random_bytes(12)).'.'.$extensions[$mime];
     if (!move_uploaded_file($_FILES['image']['tmp_name'], $directory.'/'.$filename)) throw new RuntimeException('Sèvè a pa t ka sove foto a.');
-    if (strpos($existing,'upload-') === 0 && is_file($directory.'/'.$existing)) @unlink($directory.'/'.$existing);
     return $filename;
 }
 
@@ -24,15 +23,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = post('action');
     if ($action === 'save') {
         $id = (int) post('id', '0');
+        if (!preg_match('/^\d{1,9}$/', post('quantity')) || !preg_match('/^\d{1,8}(\.\d{1,2})?$/', post('price')) || !preg_match('/^\d{1,8}(\.\d{1,2})?$/', post('cost_price', '0'))) {
+            flash('error', 'Mete yon kantite antye ak pri valab (maksimòm 2 chif apre pwen an).');
+            redirect($id ? 'products.php?edit='.$id : 'products.php?new=1');
+        }
         $values = [post('category'), post('model'), post('brand'), post('reference'), (float) post('price'), max(0, (float) post('cost_price')), max(0, (int) post('quantity')), post('description'), post('supplier_id') !== '' ? (int) post('supplier_id') : null];
         if ($values[1] === '' || $values[3] === '' || $values[4] < 0) {
             flash('error', 'Non, referans ak pri pwodwi a obligatwa.');
             redirect($id?'products.php?edit='.$id:'products.php?new=1');
         }
         $existingImage = '';
-        if ($id) { $imageQuery=$pdo->prepare('SELECT img FROM produit WHERE id=?');$imageQuery->execute([$id]);$existingImage=(string)$imageQuery->fetchColumn(); }
-        try { $image = save_product_image($existingImage); }
-        catch (RuntimeException $error) { flash('error',$error->getMessage()); redirect($id?'products.php?edit='.$id:'products.php?new=1'); }
+        $image = '';
+        try {
+        $pdo->beginTransaction();
+        if ($id) {
+            $imageQuery=$pdo->prepare('SELECT img,quantite FROM produit WHERE id=? FOR UPDATE');
+            $imageQuery->execute([$id]);
+            $previous=$imageQuery->fetch();
+            if (!$previous) throw new RuntimeException('Pwodwi a pa egziste ankò.');
+            if ((string)$previous['quantite'] !== post('original_quantity')) throw new RuntimeException('Stock la chanje depi ou ouvri paj la. Rafrechi epi verifye kantite a.');
+            $existingImage=(string)$previous['img'];
+        }
+        $image = save_product_image($existingImage);
         if ($id) {
             $old = $pdo->prepare('SELECT quantite FROM produit WHERE id=?'); $old->execute([$id]); $before = (int) $old->fetchColumn();
             $stmt = $pdo->prepare("UPDATE produit SET categorie=?,model=?,marque=?,referance=?,prix=?,cost_price=?,quantite=?,description=?,four_id=?,img=? WHERE id=?");
@@ -48,6 +60,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($values[6] > 0) $pdo->prepare("INSERT INTO stock_movements(product_id,movement_type,quantity,note,created_by) VALUES(?, 'in', ?, 'Premye stock', ?)")->execute([$id, $values[6], current_user()['user_id']]);
             log_activity('create','product',$id,trim($values[2].' '.$values[1]).'; stock '.$values[6]);
             flash('success', 'Nouvo pwodwi a ajoute.');
+        }
+        $pdo->commit();
+        if ($image !== $existingImage && strpos($existingImage, 'upload-') === 0 && basename($existingImage) === $existingImage) {
+            @unlink(__DIR__.'/produit/'.$existingImage);
+        }
+        } catch (Throwable $error) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            if ($image !== '' && $image !== $existingImage) @unlink(__DIR__.'/produit/'.$image);
+            flash('error', $error instanceof PDOException ? 'Pwodwi a pa sove. Verifye chan yo ak founisè a epi eseye ankò.' : $error->getMessage());
+            redirect($id ? 'products.php?edit='.$id : 'products.php?new=1');
         }
         redirect('products.php');
     }
@@ -77,7 +99,7 @@ $suppliers=$pdo->query('SELECT fourn_id,nom,prenom FROM fournisseur ORDER BY nom
 page_header($showForm ? ($edit ? 'Modifye pwodwi' : 'Ajoute pwodwi') : 'Pwodwi ak stock', 'products');
 ?>
 <?php if ($showForm): ?>
-<div class="card"><form method="post" enctype="multipart/form-data" class="form-grid"><input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="save"><input type="hidden" name="id" value="<?= (int)($edit['id']??0) ?>">
+<div class="card"><form method="post" enctype="multipart/form-data" class="form-grid"><input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="save"><input type="hidden" name="original_quantity" value="<?= e($edit['quantite']??'') ?>"><input type="hidden" name="id" value="<?= (int)($edit['id']??0) ?>">
 <div class="field"><label>Non pwodwi *</label><input name="model" required autofocus value="<?= e($edit['model']??'') ?>" placeholder="Egzanp: iPhone 15"></div>
 <div class="field"><label>Mak</label><input name="brand" value="<?= e($edit['marque']??'') ?>" placeholder="Egzanp: Apple"></div>
 <div class="field"><label>Referans / SKU *</label><input name="reference" required value="<?= e($edit['referance']??'') ?>" placeholder="Egzanp: IP15-128-BLK"></div>

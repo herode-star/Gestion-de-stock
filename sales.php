@@ -2,11 +2,15 @@
 require_once __DIR__.'/core/layout.php'; require_auth(); $pdo=db();
 if($_SERVER['REQUEST_METHOD']==='POST'){verify_csrf();
  $productId=(int)post('product_id');$quantity=max(1,(int)post('quantity','1'));$unitPrice=(float)post('unit_price');$customer=post('customer','Kliyan comptoir')?:'Kliyan comptoir';$payment=post('payment','Lajan kach');
- try{$pdo->beginTransaction();$stmt=$pdo->prepare('SELECT id,model,quantite,prix,cost_price FROM produit WHERE id=? FOR UPDATE');$stmt->execute([$productId]);$product=$stmt->fetch();
+ try{
+ if(!preg_match('/^[1-9]\d{0,8}$/',post('quantity')) || !preg_match('/^\d{1,8}(\.\d{1,2})?$/',post('unit_price'))) throw new RuntimeException('Kantite a dwe yon antye pozitif epi pri a dwe valab.');
+ if(strlen($customer)>120 || !in_array($payment,['Lajan kach','Kat','Transfè','Kredi','Lòt'],true)) throw new RuntimeException('Verifye non kliyan an ak metòd peman an.');
+ if($quantity*$unitPrice>9999999999.99) throw new RuntimeException('Montan vant lan twò gwo.');
+ $pdo->beginTransaction();$stmt=$pdo->prepare('SELECT id,model,quantite,prix,cost_price FROM produit WHERE id=? FOR UPDATE');$stmt->execute([$productId]);$product=$stmt->fetch();
   if(!$product)throw new RuntimeException('Pwodwi a pa egziste.');if((int)$product['quantite']<$quantity)throw new RuntimeException('Pa gen ase stock. Gen sèlman '.$product['quantite'].' ki disponib.');if($unitPrice<0)throw new RuntimeException('Pri a pa valab.');
   $total=$quantity*$unitPrice;$pdo->prepare('INSERT INTO sales(customer_name,payment_method,total,created_by) VALUES(?,?,?,?)')->execute([$customer,$payment,$total,current_user()['user_id']]);$saleId=(int)$pdo->lastInsertId();
   $pdo->prepare('INSERT INTO sale_items(sale_id,product_id,quantity,unit_price,cost_price) VALUES(?,?,?,?,?)')->execute([$saleId,$productId,$quantity,$unitPrice,$product['cost_price']]);$pdo->prepare('UPDATE produit SET quantite=quantite-? WHERE id=?')->execute([$quantity,$productId]);$pdo->prepare("INSERT INTO stock_movements(product_id,movement_type,quantity,note,created_by) VALUES(?,'out',?,'Vant #$saleId',?)")->execute([$productId,-$quantity,current_user()['user_id']]);$pdo->commit();log_activity('sale','sale',$saleId,$quantity.' × '.$product['model'].'; total '.money($total));flash('success','Vant #'.$saleId.' anrejistre. Total: '.money($total));redirect('sales.php');
- }catch(Throwable $e){if($pdo->inTransaction())$pdo->rollBack();flash('error',$e->getMessage());redirect('sales.php?new=1');}}
+ }catch(Throwable $e){if($pdo->inTransaction())$pdo->rollBack();flash('error',$e instanceof PDOException ? 'Vant lan pa sove. Eseye ankò.' : $e->getMessage());redirect('sales.php?new=1');}}
 $products=$pdo->query('SELECT id,marque,model,referance,prix,quantite FROM produit WHERE quantite>0 ORDER BY marque,model')->fetchAll();$show=isset($_GET['new']);
 $sales=$pdo->query('SELECT s.*,u.user_name,u.user_prenom,(SELECT COUNT(*) FROM sale_items i WHERE i.sale_id=s.sale_id) item_count FROM sales s LEFT JOIN users u ON u.user_id=s.created_by ORDER BY s.sale_id DESC LIMIT 100')->fetchAll();page_header($show?'Anrejistre yon vant':'Lavant','sales');
 ?>
