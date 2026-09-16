@@ -100,7 +100,7 @@ function migrate(PDO $pdo): void
             'ALTER TABLE users MODIFY user_email VARCHAR(120) NOT NULL',
             'ALTER TABLE users MODIFY num_tel VARCHAR(30) NOT NULL',
             'ALTER TABLE fournisseur MODIFY num_tel VARCHAR(30) NULL',
-            'ALTER TABLE produit MODIFY model VARCHAR(120) NOT NULL, MODIFY marque VARCHAR(120) NOT NULL, MODIFY categorie VARCHAR(80) NOT NULL, MODIFY referance VARCHAR(80) NOT NULL',
+            'ALTER TABLE produit MODIFY model VARCHAR(120) NOT NULL, MODIFY marque VARCHAR(120) NOT NULL, MODIFY categorie VARCHAR(80) NOT NULL',
         ];
         foreach ($alterations as $sql) {
             try {
@@ -124,7 +124,7 @@ function migrate(PDO $pdo): void
         $pdo->exec("INSERT INTO app_settings(setting_key,setting_value) VALUES('schema_version','2') ON DUPLICATE KEY UPDATE setting_value='2'");
     }
     if ((int) $version < 3) {
-        $pdo->exec("ALTER TABLE produit MODIFY prix DECIMAL(12,2) NOT NULL");
+        $pdo->exec("ALTER TABLE produit MODIFY prix DECIMAL(12,2) NOT NULL, MODIFY model VARCHAR(120) NOT NULL, MODIFY marque VARCHAR(120) NOT NULL, MODIFY categorie VARCHAR(80) NOT NULL");
         // Replace the historical cascading delete in one atomic ALTER.
         $pdo->exec("ALTER TABLE produit DROP FOREIGN KEY produit_ibfk_1, ADD CONSTRAINT produit_ibfk_1 FOREIGN KEY (four_id) REFERENCES fournisseur(fourn_id) ON DELETE RESTRICT ON UPDATE CASCADE");
         $pdo->exec("INSERT INTO app_settings(setting_key,setting_value) VALUES('schema_version','3') ON DUPLICATE KEY UPDATE setting_value='3'");

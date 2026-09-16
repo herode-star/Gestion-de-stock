@@ -28,8 +28,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             redirect($id ? 'products.php?edit='.$id : 'products.php?new=1');
         }
         $values = [post('category'), post('model'), post('brand'), post('reference'), (float) post('price'), max(0, (float) post('cost_price')), max(0, (int) post('quantity')), post('description'), post('supplier_id') !== '' ? (int) post('supplier_id') : null];
-        if ($values[1] === '' || $values[3] === '' || $values[4] < 0) {
-            flash('error', 'Non, referans ak pri pwodwi a obligatwa.');
+        if ($values[1] === '' || $values[3] === '' || strlen($values[3]) > 30 || $values[4] < 0) {
+            flash('error', 'Non, referans (maksimòm 30 karaktè) ak pri pwodwi a obligatwa.');
             redirect($id?'products.php?edit='.$id:'products.php?new=1');
         }
         $existingImage = '';
@@ -102,7 +102,7 @@ page_header($showForm ? ($edit ? 'Modifye pwodwi' : 'Ajoute pwodwi') : 'Pwodwi a
 <div class="card"><form method="post" enctype="multipart/form-data" class="form-grid"><input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="save"><input type="hidden" name="original_quantity" value="<?= e($edit['quantite']??'') ?>"><input type="hidden" name="id" value="<?= (int)($edit['id']??0) ?>">
 <div class="field"><label>Non pwodwi *</label><input name="model" required autofocus value="<?= e($edit['model']??'') ?>" placeholder="Egzanp: iPhone 15"></div>
 <div class="field"><label>Mak</label><input name="brand" value="<?= e($edit['marque']??'') ?>" placeholder="Egzanp: Apple"></div>
-<div class="field"><label>Referans / SKU *</label><input name="reference" required value="<?= e($edit['referance']??'') ?>" placeholder="Egzanp: IP15-128-BLK"></div>
+<div class="field"><label>Referans / SKU *</label><input name="reference" maxlength="30" required value="<?= e($edit['referance']??'') ?>" placeholder="Egzanp: IP15-128-BLK"></div>
 <div class="field"><label>Kategori</label><input name="category" value="<?= e($edit['categorie']??'') ?>" placeholder="Telefòn, rad, manje..."></div>
 <div class="field"><label>Pri vant *</label><input type="number" min="0" step="0.01" name="price" required value="<?= e($edit['prix']??'') ?>"></div>
 <div class="field"><label>Pri acha</label><input type="number" min="0" step="0.01" name="cost_price" value="<?= e($edit['cost_price']??'0') ?>"><small>Sa pèmèt sistèm nan kalkile pwofi.</small></div>
